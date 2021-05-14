@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "./interfaces/IOracle.sol";
 import "./interfaces/IWrapper.sol";
 import "./MultiWrapper.sol";
+import "hardhat/console.sol";
 
 
 contract OffchainOracle is Ownable {
-    using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     event OracleAdded(IOracle oracle);
@@ -40,14 +39,14 @@ contract OffchainOracle is Ownable {
     function oracles() external view returns (IOracle[] memory allOracles) {
         allOracles = new IOracle[](_oracles.length());
         for (uint256 i = 0; i < allOracles.length; i++) {
-            allOracles[i] = IOracle(uint256(_oracles._inner._values[i]));
+            allOracles[i] = IOracle(_oracles.at(i));
         }
     }
 
     function connectors() external view returns (IERC20[] memory allConnectors) {
         allConnectors = new IERC20[](_connectors.length());
         for (uint256 i = 0; i < allConnectors.length; i++) {
-            allConnectors[i] = IERC20(uint256(_connectors._inner._values[i]));
+            allConnectors[i] = IERC20(_connectors.at(i));
         }
     }
 
@@ -76,35 +75,64 @@ contract OffchainOracle is Ownable {
         emit ConnectorRemoved(connector);
     }
 
-    /*
-        WARNING!
-        Usage of the dex oracle on chain is highly discouraged!
-        getRate function can be easily manipulated inside transaction!
-    */
-    function getRate(IERC20 srcToken, IERC20 dstToken) external view returns (uint256 weightedRate) {
+//    /*
+//        WARNING!
+//        Usage of the dex oracle on chain is highly discouraged!
+//        getRate function can be easily manipulated inside transaction!
+//    */
+//    function getRate(IERC20 srcToken, IERC20 dstToken) external view returns (uint256 weightedRate) {
+//        require(srcToken != dstToken, "Tokens should not be the same");
+//        uint256 totalWeight;
+//        (IERC20[] memory wrappedSrcTokens, uint256[] memory srcRates) = multiWrapper.getWrappedTokens(srcToken);
+//        (IERC20[] memory wrappedDstTokens, uint256[] memory dstRates) = multiWrapper.getWrappedTokens(dstToken);
+//
+//
+//        for (uint256 i = 0; i < _oracles._inner._values.length; i++) {
+//            for (uint256 j = 0; j < _connectors._inner._values.length; j++) {
+//                for (uint256 k1 = 0; k1 < wrappedSrcTokens.length; k1++) {
+//                    for (uint256 k2 = 0; k2 < wrappedDstTokens.length; k2++) {
+//                        if (wrappedSrcTokens[k1] == wrappedDstTokens[k2]) {
+//                            return srcRates[k1].mul(dstRates[k2]).div(1e18);
+//                        }
+//
+//                        try IOracle(uint256(_oracles._inner._values[i])).getRate(wrappedSrcTokens[k1], wrappedDstTokens[k2], IERC20(uint256(_connectors._inner._values[j]))) returns (uint256 rate, uint256 weight) {
+//                            rate = rate.mul(srcRates[k1]).mul(dstRates[k2]).div(1e18).div(1e18);
+//                            weight = weight.mul(weight);
+//                            weightedRate = weightedRate.add(rate.mul(weight));
+//                            totalWeight = totalWeight.add(weight);
+//                        } catch {continue;}
+//                    }
+//                }
+//            }
+//        }
+//        weightedRate = weightedRate.div(totalWeight);
+//    }
+
+    function getRateTran(IERC20 srcToken, IERC20 dstToken) external returns (uint256 weightedRate) {
         require(srcToken != dstToken, "Tokens should not be the same");
         uint256 totalWeight;
         (IERC20[] memory wrappedSrcTokens, uint256[] memory srcRates) = multiWrapper.getWrappedTokens(srcToken);
         (IERC20[] memory wrappedDstTokens, uint256[] memory dstRates) = multiWrapper.getWrappedTokens(dstToken);
+
 
         for (uint256 i = 0; i < _oracles._inner._values.length; i++) {
             for (uint256 j = 0; j < _connectors._inner._values.length; j++) {
                 for (uint256 k1 = 0; k1 < wrappedSrcTokens.length; k1++) {
                     for (uint256 k2 = 0; k2 < wrappedDstTokens.length; k2++) {
                         if (wrappedSrcTokens[k1] == wrappedDstTokens[k2]) {
-                            return srcRates[k1].mul(dstRates[k2]).div(1e18);
+                            return (srcRates[k1] *dstRates[k2])/1e18;
                         }
 
-                        try IOracle(uint256(_oracles._inner._values[i])).getRate(wrappedSrcTokens[k1], wrappedDstTokens[k2], IERC20(uint256(_connectors._inner._values[j]))) returns (uint256 rate, uint256 weight) {
-                            rate = rate.mul(srcRates[k1]).mul(dstRates[k2]).div(1e18).div(1e18);
-                            weight = weight.mul(weight);
-                            weightedRate = weightedRate.add(rate.mul(weight));
-                            totalWeight = totalWeight.add(weight);
-                        } catch { continue; }
+                        try IOracle(_oracles.at(i)).getRate(wrappedSrcTokens[k1], wrappedDstTokens[k2], IERC20(_connectors.at(j))) returns (uint256 rate, uint256 weight) {
+                            rate = (rate * (srcRates[k1]) * (dstRates[k2]))/1e18/1e18;
+                            weight = weight * (weight);
+                            weightedRate = weightedRate + rate * (weight);
+                            totalWeight = totalWeight + (weight);
+                        } catch {continue;}
                     }
                 }
             }
         }
-        weightedRate = weightedRate.div(totalWeight);
+        weightedRate = weightedRate/totalWeight;
     }
 }

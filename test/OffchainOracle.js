@@ -50,28 +50,60 @@ describe('OffchainOracle', async function () {
                 tokens.USDC,
             ],
         );
+
+        this.expensiveOffachinOracle = await OffchainOracle.new(
+            this.multiWrapper.address,
+            [
+                this.uniswapV2LikeOracle.address,
+                this.uniswapOracle.address,
+                this.mooniswapOracle.address,
+            ],
+            [
+                ...Object.values(tokens)
+            ],
+        );
+    });
+    //
+    // it('weth -> dai', async function () {
+    //     const rate = await this.offchainOracle.getRate(tokens.WETH, tokens.DAI);
+    //     console.log(rate.toString());
+    //     expect(rate).to.be.bignumber.greaterThan(ether('1000'));
+    // });
+    //
+    // it('eth -> dai', async function () {
+    //     const rate = await this.offchainOracle.getRate(tokens.ETH, tokens.DAI);
+    //     console.log(rate.toString());
+    //     expect(rate).to.be.bignumber.greaterThan(ether('1000'));
+    // });
+    //
+    // it('usdc -> dai', async function () {
+    //     const rate = await this.offchainOracle.getRate(tokens.USDC, tokens.DAI);
+    //     console.log(rate.toString());
+    //     expect(rate).to.be.bignumber.greaterThan(ether('980000000000'));
+    // });
+    //
+    // it('dai -> adai', async function () {
+    //     const rate = await this.offchainOracle.getRate(tokens.DAI, ADAIV2);
+    //     expect(rate).to.be.bignumber.equal(ether('1'));
+    // });
+
+
+    it('measureGas', async function () {
+        const rate = await this.expensiveOffachinOracle.getRateTran(tokens.DAI, tokens.AAVE);
+        console.log(`Total gas used ${rate.receipt.cumulativeGasUsed}`);
     });
 
-    it('weth -> dai', async function () {
-        const rate = await this.offchainOracle.getRate(tokens.WETH, tokens.DAI);
-        console.log(rate.toString());
-        expect(rate).to.be.bignumber.greaterThan(ether('1000'));
-    });
-
-    it('eth -> dai', async function () {
-        const rate = await this.offchainOracle.getRate(tokens.ETH, tokens.DAI);
-        console.log(rate.toString());
-        expect(rate).to.be.bignumber.greaterThan(ether('1000'));
-    });
-
-    it('usdc -> dai', async function () {
-        const rate = await this.offchainOracle.getRate(tokens.USDC, tokens.DAI);
-        console.log(rate.toString());
-        expect(rate).to.be.bignumber.greaterThan(ether('980000000000'));
-    });
-
-    it('dai -> adai', async function () {
-        const rate = await this.offchainOracle.getRate(tokens.DAI, ADAIV2);
-        expect(rate).to.be.bignumber.equal(ether('1'));
-    });
+    function getMethods(obj) {
+        var result = [];
+        for (var id in obj) {
+            try {
+                if (typeof(obj[id]) == "function") {
+                    result.push(id + ": " + obj[id].toString());
+                }
+            } catch (err) {
+                result.push(id + ": inaccessible");
+            }
+        }
+        return result;
+    }
 });
