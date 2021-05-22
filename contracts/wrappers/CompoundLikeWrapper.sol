@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
+
 import "../interfaces/IComptroller.sol";
 import "../interfaces/IWrapper.sol";
 
 
 contract CompoundLikeWrapper is IWrapper {
-    using SafeMath for uint256;
+
 
     IComptroller private immutable _comptroller;
     IERC20 private constant _BASE = IERC20(0x0000000000000000000000000000000000000000);
@@ -44,16 +44,16 @@ contract CompoundLikeWrapper is IWrapper {
 
     function wrap(IERC20 token) external view override returns (IERC20 wrappedToken, uint256 rate) {
         if (token == _BASE) {
-            return (_cBase, uint256(1e36).div(ICToken(address(_cBase)).exchangeRateStored()));
+            return (_cBase, uint256(1e36)/(ICToken(address(_cBase)).exchangeRateStored()));
         } else if (token == _cBase) {
             return (_BASE, ICToken(address(_cBase)).exchangeRateStored());
         }
         IERC20 underlying = cTokenToToken[token];
         IERC20 cToken = tokenTocToken[token];
-        if (underlying != IERC20(0)) {
+        if (underlying != IERC20(address(0))) {
             return (underlying, ICToken(address(token)).exchangeRateStored());
-        } else if (cToken != IERC20(0)) {
-            return (cToken, uint256(1e36).div(ICToken(address(cToken)).exchangeRateStored()));
+        } else if (cToken != IERC20(address(0))) {
+            return (cToken, uint256(1e36)/(ICToken(address(cToken)).exchangeRateStored()));
         } else {
             revert("Unsupported token");
         }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity 0.8.4;
 
 import "../interfaces/ILendingPoolV1.sol";
 import "../interfaces/IWrapper.sol";
@@ -17,7 +17,7 @@ contract AaveWrapperV1 is IWrapper {
     function addMarkets(IERC20[] memory tokens) external {
         for (uint256 i = 0; i < tokens.length; i++) {
             (,,,,,,,,,,, IERC20 aToken,) = _LENDING_POOL.getReserveData(address(tokens[i]));
-            require(aToken != IERC20(0), "Token is not supported");
+            require(aToken != IERC20(address(0)), "Token is not supported");
             aTokenToToken[aToken] = tokens[i];
             tokenToaToken[tokens[i]] = aToken;
         }
@@ -26,7 +26,7 @@ contract AaveWrapperV1 is IWrapper {
     function removeMarkets(IERC20[] memory tokens) external {
         for (uint256 i = 0; i < tokens.length; i++) {
             (,,,,,,,,,,, IERC20 aToken,) = _LENDING_POOL.getReserveData(address(tokens[i]));
-            require(aToken == IERC20(0), "Token is still supported");
+            require(aToken == IERC20(address(0)), "Token is still supported");
             delete aTokenToToken[aToken];
             delete tokenToaToken[tokens[i]];
         }
@@ -36,9 +36,9 @@ contract AaveWrapperV1 is IWrapper {
         token = token == _ETH ? _EEE : token;
         IERC20 underlying = aTokenToToken[token];
         IERC20 aToken = tokenToaToken[token];
-        if (underlying != IERC20(0)) {
+        if (underlying != IERC20(address(0))) {
             return (underlying == _EEE ? _ETH : underlying, 1e18);
-        } else if (aToken != IERC20(0)) {
+        } else if (aToken != IERC20(address(0))) {
             return (aToken, 1e18);
         } else {
             revert("Unsupported token");
