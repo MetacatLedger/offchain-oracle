@@ -21,7 +21,6 @@ interface ILendingPoolV1 {
             uint256 utilizationRate,
             uint256 liquidityIndex,
             uint256 variableBorrowIndex,
-            IERC20 aTokenAddress,
-            uint40 lastUpdateTimestamp
+            IERC20 aTokenAddress
         );
 }

@@ -21,13 +21,13 @@ const tokens = {
     COMP: '0xc00e94Cb662C3520282E6f5717214004A7f26888',
 };
 
-function assertRoughlyEquals(x, y, significantDigits) {
-    const xString = x.toString();
-    const yString = y.toString();
+function assertRoughlyEquals(expected, actual, significantDigits) {
+    const expectedString = expected.toString();
+    const actualString = actual.toString();
     const areRoughlyEquals =
-        xString.length === yString.length
-        && xString.substring(0, significantDigits) === yString.substring(0, significantDigits);
-    assert.isTrue(areRoughlyEquals, `${x} != ${y} with at least ${significantDigits} significant digits`);
+        expectedString.length === actualString.length
+        && expectedString.substring(0, significantDigits) === actualString.substring(0, significantDigits);
+    assert.isTrue(areRoughlyEquals, `Expected '${expected}' but got '${actual}'. They aren't equal with at least ${significantDigits} significant digits`);
 }
 
 module.exports = {
