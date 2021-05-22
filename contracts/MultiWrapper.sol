@@ -25,7 +25,7 @@ contract MultiWrapper is Ownable {
     function wrappers() external view returns (IWrapper[] memory allWrappers) {
         allWrappers = new IWrapper[](_wrappers.length());
         for (uint256 i = 0; i < allWrappers.length; i++) {
-            allWrappers[i] = IWrapper(_wrappers.at(i));
+            allWrappers[i] = IWrapper(address(uint160(uint256(_wrappers._inner._values[i]))));
         }
     }
 
@@ -44,7 +44,7 @@ contract MultiWrapper is Ownable {
         uint256[] memory memRates = new uint256[](20);
         uint256 len = 0;
         for (uint256 i = 0; i < _wrappers._inner._values.length; i++) {
-            try IWrapper(_wrappers.at(i)).wrap(token) returns (IERC20 wrappedToken, uint256 rate) {
+            try IWrapper(address(uint160(uint256(_wrappers._inner._values[i])))).wrap(token) returns (IERC20 wrappedToken, uint256 rate) {
                 memWrappedTokens[len] = wrappedToken;
                 memRates[len] = rate;
                 len += 1;
