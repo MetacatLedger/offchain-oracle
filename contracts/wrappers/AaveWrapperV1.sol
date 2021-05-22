@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.4;
+pragma solidity ^0.8.4;
 
 import "../interfaces/ILendingPoolV1.sol";
 import "../interfaces/IWrapper.sol";
