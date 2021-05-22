@@ -24,8 +24,9 @@ contract MultiWrapper is Ownable {
 
     function wrappers() external view returns (IWrapper[] memory allWrappers) {
         allWrappers = new IWrapper[](_wrappers.length());
-        for (uint256 i = 0; i < allWrappers.length; i++) {
+        for (uint256 i = 0; i < allWrappers.length; ) {
             allWrappers[i] = IWrapper(address(uint160(uint256(_wrappers._inner._values[i]))));
+        unchecked {i++;}
         }
     }
 
@@ -43,12 +44,12 @@ contract MultiWrapper is Ownable {
         IERC20[] memory memWrappedTokens = new IERC20[](20);
         uint256[] memory memRates = new uint256[](20);
         uint256 len = 0;
-        for (uint256 i = 0; i < _wrappers._inner._values.length; i++) {
+        for (uint256 i = 0; i < _wrappers._inner._values.length; ) {
             try IWrapper(address(uint160(uint256(_wrappers._inner._values[i])))).wrap(token) returns (IERC20 wrappedToken, uint256 rate) {
                 memWrappedTokens[len] = wrappedToken;
                 memRates[len] = rate;
                 len += 1;
-                for (uint256 j = 0; j < _wrappers._inner._values.length; j++) {
+                for (uint256 j = 0; j < _wrappers._inner._values.length; ) {
                     if (i != j) {
                         try IWrapper(_wrappers.at(j)).wrap(wrappedToken) returns (IERC20 wrappedToken2, uint256 rate2) {
                             bool used = false;
@@ -63,10 +64,12 @@ contract MultiWrapper is Ownable {
                                 memRates[len] = (rate * rate2)/1e18;
                                 len += 1;
                             }
-                        } catch { continue; }
+                        } catch { }
                     }
+                unchecked {j++;}
                 }
-            } catch { continue; }
+            } catch { }
+        unchecked {i++;}
         }
         wrappedTokens = new IERC20[](len + 1);
         rates = new uint256[](len + 1);
